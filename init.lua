@@ -195,12 +195,12 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 
 -- Highlight when yanking (copying) text
 --  Try it with `yap` in normal mode
---  See `:help vim.highlight.on_yank()`
+--  See `:help vim.hl.on_yank()`
 vim.api.nvim_create_autocmd('TextYankPost', {
   desc = 'Highlight when yanking (copying) text',
   group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
   callback = function()
-    vim.highlight.on_yank()
+    vim.hl.on_yank()
   end,
 })
 
@@ -233,7 +233,14 @@ require('lazy').setup({
   'HallerPatrick/py_lsp.nvim',
   'rafamadriz/friendly-snippets',
   'ray-x/lsp_signature.nvim',
-  -- "garymjr/nvim-snippets",
+  'b0o/SchemaStore',
+  'garymjr/nvim-snippets',
+  'zbirenbaum/copilot.lua',
+  's1n7ax/nvim-window-picker',
+  'ellisonleao/glow.nvim',
+  'yetone/avante.nvim',
+  -- 'github.copilot.lua',
+  -- 'lazyvim.plugins.extras.coding.copitot',
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -259,6 +266,11 @@ require('lazy').setup({
       },
     },
     {
+      'HallerPatrick/py_lsp.nvim',
+      dependencies = { 'dharmx/toml.nvim' },
+      opts = {},
+    },
+    {
       'ray-x/lsp_signature.nvim',
       event = 'InsertEnter',
       opts = {
@@ -275,6 +287,116 @@ require('lazy').setup({
       'vhyrro/luarocks.nvim',
       priority = 1000, -- Very high priority is required, luarocks.nvim should run as the first plugin in your config.
       config = true,
+    },
+    {
+      'b0o/SchemaStore.nvim',
+      lazy = true,
+      version = false, -- last release is way too old
+    },
+    {
+      'zbirenbaum/copilot.lua',
+      cmd = 'Copilot',
+      build = ':Copilot auth',
+      event = 'InsertEnter',
+      opts = {
+        suggestion = {
+          enabled = not vim.g.ai_cmp,
+          auto_trigger = true,
+          keymap = {
+            -- accept = false, -- handled by nvim-cmp / blink.cmp
+            -- accept = '<C-y>',
+            accept = '<Tab>',
+            next = '<M-]>',
+            prev = '<M-[>',
+          },
+        },
+        panel = { enabled = false },
+        filetypes = {
+          markdown = true,
+          help = true,
+        },
+      },
+    },
+    {
+      's1n7ax/nvim-window-picker',
+      name = 'window-picker',
+      event = 'VeryLazy',
+      version = '2.*',
+      config = function()
+        require('window-picker').setup()
+      end,
+    },
+    {
+      'ellisonleao/glow.nvim',
+      config = true,
+      cmd = 'Glow',
+    },
+    {
+      'yetone/avante.nvim',
+      event = 'VeryLazy',
+      version = false, -- Never set this value to "*"! Never!
+      ---@module 'avante'
+      ---@type avante.Config
+      opts = {
+        -- add any opts here
+        -- for example
+        provider = 'openai',
+        providers = {
+          openai = {
+            endpoint = 'https://api.openai.com/v1',
+            model = 'gpt-4o', -- your desired model (or use gpt-4o, etc.)
+            extra_request_body = {
+              timeout = 30000, -- Timeout in milliseconds, increase this for reasoning models
+              temperature = 0.75,
+              max_completion_tokens = 8192, -- Increase this to include reasoning tokens (for reasoning models)
+              --reasoning_effort = "medium", -- low|medium|high, only used for reasoning models
+            },
+          },
+        },
+        hints = { enabled = false },
+      },
+      -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
+      build = 'make',
+      -- build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" -- for windows
+      dependencies = {
+        'nvim-treesitter/nvim-treesitter',
+        'nvim-lua/plenary.nvim',
+        'MunifTanjim/nui.nvim',
+        --- The below dependencies are optional,
+        'echasnovski/mini.pick', -- for file_selector provider mini.pick
+        'nvim-telescope/telescope.nvim', -- for file_selector provider telescope
+        'hrsh7th/nvim-cmp', -- autocompletion for avante commands and mentions
+        'ibhagwan/fzf-lua', -- for file_selector provider fzf
+        'stevearc/dressing.nvim', -- for input provider dressing
+        'folke/snacks.nvim', -- for input provider snacks
+        'nvim-tree/nvim-web-devicons', -- or echasnovski/mini.icons
+        'zbirenbaum/copilot.lua', -- for providers='copilot'
+        {
+          -- support for image pasting
+          'HakonHarnes/img-clip.nvim',
+          event = 'VeryLazy',
+          opts = {
+            -- recommended settings
+            default = {
+              embed_image_as_base64 = false,
+              prompt_for_file_name = false,
+              drag_and_drop = {
+                insert_mode = true,
+              },
+              -- required for Windows users
+              use_absolute_path = true,
+            },
+          },
+        },
+        {
+          -- Make sure to set this up properly if you have lazy=true
+          'MeanderingProgrammer/render-markdown.nvim',
+          opts = {
+            file_types = { 'markdown', 'Avante' },
+          },
+          ft = { 'markdown', 'Avante' },
+        },
+      },
     },
   },
 
@@ -372,6 +494,10 @@ require('lazy').setup({
         cond = function()
           return vim.fn.executable 'make' == 1
         end,
+
+        config = function()
+          require('telescope').load_extension 'fzf'
+        end,
       },
       { 'nvim-telescope/telescope-ui-select.nvim' },
 
@@ -404,12 +530,31 @@ require('lazy').setup({
         -- You can put your default mappings / updates / etc. in here
         --  All the info you're looking for is in `:help telescope.setup()`
         --
-        -- defaults = {
-        --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-        --   },
-        -- },
-        -- pickers = {}
+        defaults = {
+          -- mappings = {
+          --   i = { ['<c-enter>'] = 'to_fuzzy_refine' },
+          -- },
+          vimgrep_arguments = {
+            'rg',
+            -- '--color=never',
+            -- '--no-heading',
+            '--with-filename',
+            '--line-number',
+            '--column',
+            '--smart-case',
+            '--hidden', -- include hidden files
+            '--no-ignore', -- include files ignored by .gitignore
+          },
+        },
+        pickers = {
+          find_files = {
+            hidden = true, -- show hidden files
+            no_ignore = true, -- show files in .gitignore
+          },
+          live_grep = {
+            hidden = true, -- apply to live_grep as well
+          },
+        },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -638,7 +783,7 @@ require('lazy').setup({
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         -- clangd = {},
-        -- gopls = {},
+        gopls = {},
         pyright = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
@@ -647,7 +792,7 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
+        ts_ls = {},
         --
 
         lua_ls = {
@@ -812,8 +957,8 @@ require('lazy').setup({
           -- If you prefer more traditional completion keymaps,
           -- you can uncomment the following lines
           --['<CR>'] = cmp.mapping.confirm { select = true },
-          --['<Tab>'] = cmp.mapping.select_next_item(),
-          --['<S-Tab>'] = cmp.mapping.select_prev_item(),
+          ['<Tab>'] = cmp.mapping.select_next_item(),
+          ['<S-Tab>'] = cmp.mapping.select_prev_item(),
 
           -- Manually trigger a completion from nvim-cmp.
           --  Generally you don't need this, because nvim-cmp will display
@@ -867,7 +1012,7 @@ require('lazy').setup({
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'habamax'
+      vim.cmd.colorscheme 'tokyonight-night'
 
       -- You can configure highlights by doing something like:
       vim.cmd.hi 'Comment gui=none'
@@ -920,7 +1065,23 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'python', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = {
+        'bash',
+        'c',
+        'python',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'query',
+        'vim',
+        'vimdoc',
+        'yaml',
+        'javascript',
+        'typescript',
+      },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -931,6 +1092,16 @@ require('lazy').setup({
         additional_vim_regex_highlighting = { 'ruby' },
       },
       indent = { enable = true, disable = { 'ruby' } },
+    },
+    vim.filetype.add {
+      extension = {
+        gotmpl = 'gotmpl',
+      },
+      pattern = {
+        ['.*/templates/.*%.tpl'] = 'helm',
+        ['.*/templates/.*%.ya?ml'] = 'helm',
+        ['helmfile.*%.ya?ml'] = 'helm',
+      },
     },
     -- There are additional nvim-treesitter modules that you can use to interact
     -- with nvim-treesitter. You should go explore a few and see what interests you:
