@@ -239,6 +239,7 @@ require('lazy').setup({
   's1n7ax/nvim-window-picker',
   'ellisonleao/glow.nvim',
   'yetone/avante.nvim',
+  'kdheepak/lazygit.nvim',
   -- 'github.copilot.lua',
   -- 'lazyvim.plugins.extras.coding.copitot',
 
@@ -263,6 +264,26 @@ require('lazy').setup({
         delete = { text = '_' },
         topdelete = { text = '‾' },
         changedelete = { text = '~' },
+      },
+    },
+    {
+      'kdheepak/lazygit.nvim',
+      lazy = true,
+      cmd = {
+        'LazyGit',
+        'LazyGitConfig',
+        'LazyGitCurrentFile',
+        'LazyGitFilter',
+        'LazyGitFilterCurrentFile',
+      },
+      -- optional for floating window border decoration
+      dependencies = {
+        'nvim-lua/plenary.nvim',
+      },
+      -- setting the keybinding for LazyGit with 'keys' is recommended in
+      -- order to load the plugin when the command is run for the first time
+      keys = {
+        { '<leader>lg', '<cmd>LazyGit<cr>', desc = 'LazyGit' },
       },
     },
     {
@@ -835,7 +856,8 @@ require('lazy').setup({
             -- by the server configuration above. Useful when disabling
             -- certain features of an LSP (for example, turning off formatting for ts_ls)
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
+            -- require('lspconfig')[server_name].setup(server)
+            vim.lsp.config('lspconfig', {})
           end,
         },
       }
@@ -1069,6 +1091,7 @@ require('lazy').setup({
         'bash',
         'c',
         'python',
+        'r',
         'diff',
         'html',
         'lua',
